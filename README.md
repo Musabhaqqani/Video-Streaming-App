@@ -8,7 +8,7 @@ It looks as easy as uploading a file and storing it into a S3 bucket while creat
 
 When you hit a browser or click an image, the content gets downloaded at the client’s side and then is viewed to you. Suppose a user clicks on 480p, the video gets downloaded… Now they decide to shift to 1080p, the video again with a higher resolution gets downloaded. The person again decides to shift back to 720p, the 1080p and 720p again ends up on the client machine. 
 
-To solve this we use a concept called **adaptive streaming** where the video is segmented into chunks**. ~FFMPEG**
+To solve this we use a concept called **adaptive streaming** where the video is segmented into chunks. ~FFMPEG
 
 [https://www.cloudflare.com/en-gb/learning/video/what-is-http-live-streaming/](https://www.cloudflare.com/en-gb/learning/video/what-is-http-live-streaming/)
 
