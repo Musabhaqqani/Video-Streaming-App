@@ -31,6 +31,7 @@ uploadRoute.post("/upload", upload.single("file"), (req, res) => {
     fs.mkdirSync(outputPath, { recursive: true });
   }
 
+  //Todo: Modify this command to create segments for 480, 720 and 1080p
   const ffmpegCommand = `ffmpeg -i ${videoPath} -codec:v libx264 -codec:a aac -hls_time 10 -hls_playlist_type vod -hls_segment_filename "${outputPath}/segment%03d.ts" -start_number 0 ${hlsPath}`;
   // This should be pushed and executed in a queue at real time, this implementation is not used in production for converting mp4 to hls format
   exec(ffmpegCommand, (error, stdout, stderr) => {
@@ -41,6 +42,7 @@ uploadRoute.post("/upload", upload.single("file"), (req, res) => {
     console.log(`stderr: ${stderr}`);
     const videoUrl = `http://localhost:8000/uploads/videos/${lessonId}/index.m3u8`;
 
+    // Todo: save into firebase/backend
     res.json({
       message: "Video converted to HLS format",
       videoUrl: videoUrl,

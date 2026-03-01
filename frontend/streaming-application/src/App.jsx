@@ -1,35 +1,43 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import React, { useState } from "react";
+import VideoPlayer from "./components/videoPlayer";
+import videojs from "video.js";
+import "./App.css";
 
 function App() {
-  const [count, setCount] = useState(0)
+  const playerRef = React.useRef(null);
 
+  const videoJsOptions = {
+    autoplay: true,
+    controls: true,
+    responsive: true,
+    fluid: true,
+    sources: [
+      {
+        // Todo: the src is to be taken from the backend api
+        src: "http://localhost:8000/uploads/videos/37da1f12-5c19-41be-8347-5d3d4775c45d/index.m3u8",
+        type: "application/x-mpegURL",
+      },
+    ],
+  };
+
+  const handlePlayerReady = (player) => {
+    playerRef.current = player;
+
+    // You can handle player events here, for example:
+    player.on("waiting", () => {
+      videojs.log("player is waiting");
+    });
+
+    player.on("dispose", () => {
+      videojs.log("player will dispose");
+    });
+  };
   return (
     <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
+    {/* Modify the player to select 420, 720 and 1080p */}
+      <VideoPlayer options={videoJsOptions} onReady={handlePlayerReady} />
     </>
-  )
+  );
 }
 
-export default App
+export default App;
