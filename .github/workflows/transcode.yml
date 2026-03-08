@@ -50,9 +50,17 @@ jobs:
           B2_APPLICATION_KEY: ${{ secrets.APPLICATION_KEY }}
           OUTPUT_BUCKET: ${{ vars.B2_PRIVATE_OUTPUT_BUCKET }}
         run: |
-          b2 account authorize $APPLICATION_KEY_ID $APPLICATION_KEY
-          b2 resource sync output/ "b2://$OUTPUT_BUCKET/videos/${{ github.event.client_payload.videoId }}/"
-
+          # 1. Re-authorize for this step
+          b2 account authorize $B2_APPLICATION_KEY_ID $B2_APPLICATION_KEY
+          
+          # 2. Debug: List the files created by FFmpeg to ensure they exist
+          echo "Checking generated files..."
+          ls -R output/
+          
+          # 3. Perform the Sync
+          # Note: We use './output' to be explicit about the local source
+          b2 sync ./output "b2://$OUTPUT_BUCKET/videos/${{ github.event.client_payload.videoId }}/"
+          
       - name: Notify Backend
         run: |
           curl -X GET "${{ vars.NGROK_URL }}/api/v1/updateVideoStatus?id=${{ github.event.client_payload.videoId }}&status=ready"
