@@ -17,12 +17,12 @@ jobs:
 
       - name: Download and Transcode
         env:
-          B2_APPLICATION_KEY_ID: ${{ secrets.B2_APPLICATION_KEY_ID }}
-          B2_APPLICATION_KEY: ${{ secrets.B2_APPLICATION_KEY }}
+          B2_APPLICATION_KEY_ID: ${{ secrets.APPLICATION_KEY_ID }}
+          B2_APPLICATION_KEY: ${{ secrets.APPLICATION_KEY }}
           RAW_BUCKET: ${{ vars.B2_PRIVATE_RAW_BUCKET }}
         run: |
           # 1. Authorize
-          b2 account authorize $B2_APPLICATION_KEY_ID $B2_APPLICATION_KEY
+          b2 account authorize $APPLICATION_KEY_ID $APPLICATION_KEY
           
           # 2. Setup folders
           mkdir -p output/v0 output/v1 output/v2
@@ -46,11 +46,11 @@ jobs:
 
       - name: Upload to Private Output Bucket
         env:
-          B2_APPLICATION_KEY_ID: ${{ secrets.B2_APPLICATION_KEY_ID }}
-          B2_APPLICATION_KEY: ${{ secrets.B2_APPLICATION_KEY }}
+          B2_APPLICATION_KEY_ID: ${{ secrets.APPLICATION_KEY_ID }}
+          B2_APPLICATION_KEY: ${{ secrets.APPLICATION_KEY }}
           OUTPUT_BUCKET: ${{ vars.B2_PRIVATE_OUTPUT_BUCKET }}
         run: |
-          b2 account authorize $B2_APPLICATION_KEY_ID $B2_APPLICATION_KEY
+          b2 account authorize $APPLICATION_KEY_ID $APPLICATION_KEY
           b2 resource sync output/ "b2://$OUTPUT_BUCKET/videos/${{ github.event.client_payload.videoId }}/"
 
       - name: Notify Backend
