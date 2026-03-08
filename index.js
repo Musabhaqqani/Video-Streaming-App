@@ -17,4 +17,4 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 app.use('/api/v1', uploadRoute);
 app.use('/api/v1', authorizeRoute);
-app.listen(8000, () => console.log('Server is listening at 3000'))
+app.listen(8000, () => console.log('Server is listening at 8000'))
