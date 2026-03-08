@@ -15,25 +15,26 @@ jobs:
           sudo apt-get install -y ffmpeg
           pip install --upgrade b2
 
-      - name: Download & Transcode
+      - name: Download and Transcode
         env:
-          B2_KEY_ID: ${{ secrets.B2_APPLICATION_KEY_ID }}
-          B2_KEY: ${{ secrets.B2_APPLICATION_KEY }}
+          B2_APPLICATION_KEY_ID: ${{ secrets.B2_APPLICATION_KEY_ID }}
+          B2_APPLICATION_KEY: ${{ secrets.B2_APPLICATION_KEY }}
           RAW_BUCKET: ${{ secrets.B2_PRIVATE_RAW_BUCKET }}
         run: |
-          b2 authorize-account $B2_KEY_ID $B2_KEY
+          # 1. Authorize
+          b2 account authorize $B2_APPLICATION_KEY_ID $B2_APPLICATION_KEY
           
-          # Use the payload sent from your Node.js server
+          # 2. Setup folders
+          mkdir -p output/v0 output/v1 output/v2
+          
+          # 3. Variables from payload
           VIDEO_ID="${{ github.event.client_payload.videoId }}"
           FILENAME="${{ github.event.client_payload.filename }}"
           
-          # Download the specific file
-          b2 download-file-by-name $RAW_BUCKET "$VIDEO_ID-$FILENAME" input.mp4
+          # 4. Download (Using modernized file download command)
+          b2 file download "b2://$RAW_BUCKET/$VIDEO_ID-$FILENAME" input.mp4
           
-          # Create HLS directory structure
-          mkdir -p output/v0 output/v1 output/v2
-          
-          # Transcode
+          # 5. Transcode
           ffmpeg -i input.mp4 \
           -map 0:v -map 0:a -s:v:0 1920x1080 -b:v:0 5000k \
           -map 0:v -map 0:a -s:v:1 1280x720  -b:v:1 2800k \
@@ -45,14 +46,13 @@ jobs:
 
       - name: Upload to Private Output Bucket
         env:
-          B2_KEY_ID: ${{ secrets.B2_APPLICATION_KEY_ID }}
-          B2_KEY: ${{ secrets.B2_APPLICATION_KEY }}
+          B2_APPLICATION_KEY_ID: ${{ secrets.B2_APPLICATION_KEY_ID }}
+          B2_APPLICATION_KEY: ${{ secrets.B2_APPLICATION_KEY }}
           OUTPUT_BUCKET: ${{ secrets.B2_PRIVATE_OUTPUT_BUCKET }}
         run: |
-          # Sync the entire output folder to the private stream bucket
-          b2 sync output/ b2://$OUTPUT_BUCKET/videos/${{ github.event.client_payload.videoId }}/
+          b2 account authorize $B2_APPLICATION_KEY_ID $B2_APPLICATION_KEY
+          b2 resource sync output/ "b2://$OUTPUT_BUCKET/videos/${{ github.event.client_payload.videoId }}/"
 
       - name: Notify Backend
         run: |
-          # Callback to your local machine via ngrok
           curl -X GET "${{ secrets.NGROK_URL }}/api/v1/updateVideoStatus?id=${{ github.event.client_payload.videoId }}&status=ready"
