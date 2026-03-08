@@ -7,14 +7,14 @@ function App() {
   const playerRef = React.useRef(null);
 
   const videoJsOptions = {
-    autoplay: true,
+    autoplay: false,
     controls: true,
     responsive: true,
     fluid: true,
     sources: [
       {
         // Todo: the src is to be taken from the backend api
-        src: "http://localhost:8000/uploads/videos/37da1f12-5c19-41be-8347-5d3d4775c45d/index.m3u8",
+        src: "http://localhost:8000/uploads/videos/cfc52efa-8db2-4d3d-8456-e7a680006e2d/master.m3u8",
         type: "application/x-mpegURL",
       },
     ],
@@ -22,7 +22,6 @@ function App() {
 
   const handlePlayerReady = (player) => {
     playerRef.current = player;
-
     // You can handle player events here, for example:
     player.on("waiting", () => {
       videojs.log("player is waiting");
