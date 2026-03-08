@@ -48,10 +48,11 @@ authorizeRoute.get("/getSignedUrl", async (req, res) => {
 authorizeRoute.post("/updateVideoStatus", async (req, res) => {
   try {
     const response = await client`update videos
-        set status = 'processing'
+        set status = ${req.query.status}
         where id=${req.query.videoId}
         RETURNING id, original_file_name`;
-    res.status(200).json({ success: "Transcoding video..." });
+    console.log(`Video ${req.query.videoId} is now ${req.query.status}`);
+    res.status(200).json({ success: "Status updated" });
     triggerTranscoding(response[0].id, response[0].original_file_name);
   } catch (err) {
     console.log(err);
@@ -87,4 +88,39 @@ const triggerTranscoding = async (videoId, filename) => {
   }
 };
 
+authorizeRoute.get("/getStreamUrl/:videoId", async (req, res) => {
+  const { videoId } = req.params;
+  try {
+    await b2.authorize();
+    const authReponse = await b2.getDownloadAuthorization({
+      bucketId: process.env.BUCKET_ID,
+      fileNamePrefix: `videos/${videoId}/`,
+      validDurationInSeconds: 3600
+    });
+    const token = authReponse.data.authorizationToken;
+    const masterUrl = `https://f005.backblazeb2.com/file/${process.env.BUCKET_NAME}/videos/${videoId}/master.m3u8?Authorization=${token}`;
+    res.json({ streamUrl: masterUrl });
+  } catch {
+    res.status(500).json({ error: "Could not generate stream URL" });
+  }
+});
+
+authorizeRoute.get("/video-status/:id", async (req, res) => {
+  try {
+    const video = await client`
+      SELECT status FROM videos WHERE id = ${req.params.id}
+    `;
+    if (video.length > 0) {
+      res.json({ status: video[0].status });
+    } else {
+      res.status(404).json({ error: "Not found" });
+    }
+  } catch (err) {
+    res.status(500).json({ error: "Database error" });
+  }
+});
+
 export default authorizeRoute;
+
+
+// b2 bucket update vod-application allPrivate --cors-rules "$(cat corsRules.json)"

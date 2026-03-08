@@ -1,6 +1,7 @@
 import React from "react";
 
 const Upload = () => {
+
   const handleVideoUpload = () => {
     const input = document.getElementById("video-picker");
     const file = input.files[0];
@@ -8,16 +9,15 @@ const Upload = () => {
   };
 
   const updateVideoStatus = async(videoId) => {
-    const response = await fetch(`/api/v1/updateVideoStatus?videoId=${videoId}`,{
+    const videoStatus = "processing";
+    await fetch(`/api/v1/updateVideoStatus?videoId=${videoId}&status=${videoStatus}`,{
       method: 'POST'}
     );
-    const data = await response.json();
-    console.log(data);
   }
 
   const uploadFileToBucket = async (file) => {
     const response = await fetch(
-      "/api/v1/getSignedUrl?title=demo&filename=out.mp4",
+      `/api/v1/getSignedUrl?title=demo&filename=${file.name}`,
     );
     const { uploadUrl, authorizationToken, videoId } = await response.json();
 
@@ -32,9 +32,6 @@ const Upload = () => {
       body: file
     });
     if(uploadRes.ok){
-      console.log("uploaded, have to transcode");
-      //trigger backend service to update status of the file
-
       updateVideoStatus(videoId);
     }
   };
