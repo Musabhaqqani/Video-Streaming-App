@@ -3,6 +3,7 @@ import cors from 'cors'
 import path from 'path'
 import { fileURLToPath } from 'url';
 import uploadRoute from './routes/uploadRoute.js'
+import authorizeRoute from './routes/authorizeRoute.js';
 
 const app = express();
 const __filename = fileURLToPath(import.meta.url);
@@ -14,5 +15,6 @@ app.use(express.urlencoded({extended: true}))
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 // Have to write a middleware for access-control-allow-origin, jwt assertion, content-type, origin and accept
 
-app.use('/api/v1', uploadRoute)
+app.use('/api/v1', uploadRoute);
+app.use('/api/v1', authorizeRoute);
 app.listen(8000, () => console.log('Server is listening at 3000'))
