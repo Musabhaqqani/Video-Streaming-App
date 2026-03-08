@@ -63,4 +63,4 @@ jobs:
           
       - name: Notify Backend
         run: |
-          curl -X GET "${{ vars.NGROK_URL }}/api/v1/updateVideoStatus?id=${{ github.event.client_payload.videoId }}&status=ready"
+          curl -X POST "${{ vars.NGROK_URL }}/api/v1/updateVideoStatus?videoId=${{ github.event.client_payload.videoId }}&status=ready"
