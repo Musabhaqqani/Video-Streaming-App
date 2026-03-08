@@ -19,7 +19,7 @@ jobs:
         env:
           B2_APPLICATION_KEY_ID: ${{ secrets.B2_APPLICATION_KEY_ID }}
           B2_APPLICATION_KEY: ${{ secrets.B2_APPLICATION_KEY }}
-          RAW_BUCKET: ${{ secrets.B2_PRIVATE_RAW_BUCKET }}
+          RAW_BUCKET: ${{ vars.B2_PRIVATE_RAW_BUCKET }}
         run: |
           # 1. Authorize
           b2 account authorize $B2_APPLICATION_KEY_ID $B2_APPLICATION_KEY
@@ -48,11 +48,11 @@ jobs:
         env:
           B2_APPLICATION_KEY_ID: ${{ secrets.B2_APPLICATION_KEY_ID }}
           B2_APPLICATION_KEY: ${{ secrets.B2_APPLICATION_KEY }}
-          OUTPUT_BUCKET: ${{ secrets.B2_PRIVATE_OUTPUT_BUCKET }}
+          OUTPUT_BUCKET: ${{ vars.B2_PRIVATE_OUTPUT_BUCKET }}
         run: |
           b2 account authorize $B2_APPLICATION_KEY_ID $B2_APPLICATION_KEY
           b2 resource sync output/ "b2://$OUTPUT_BUCKET/videos/${{ github.event.client_payload.videoId }}/"
 
       - name: Notify Backend
         run: |
-          curl -X GET "${{ secrets.NGROK_URL }}/api/v1/updateVideoStatus?id=${{ github.event.client_payload.videoId }}&status=ready"
+          curl -X GET "${{ vars.NGROK_URL }}/api/v1/updateVideoStatus?id=${{ github.event.client_payload.videoId }}&status=ready"
