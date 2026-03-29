@@ -1,41 +1,36 @@
-import React, { useState } from "react";
-import VideoPlayer from "./components/videoPlayer";
-import videojs from "video.js";
-import "./App.css";
+import React, { useEffect, useState } from "react";
+import Upload from "./components/Upload";
+import VideoPlayerContainer from "./components/VideoPlayerContainer";
 
 function App() {
-  const playerRef = React.useRef(null);
+  const [src, setSrc] = useState([]);
+  useEffect(() => {
+    getUploadedVideos();
+  }, []);
 
-  const videoJsOptions = {
-    autoplay: true,
-    controls: true,
-    responsive: true,
-    fluid: true,
-    sources: [
-      {
-        // Todo: the src is to be taken from the backend api
-        src: "http://localhost:8000/uploads/videos/37da1f12-5c19-41be-8347-5d3d4775c45d/index.m3u8",
-        type: "application/x-mpegURL",
-      },
-    ],
+  const getUploadedVideos = async () => {
+    try {
+      const uploadRes = await fetch("api/v1/getDashboardData", {
+        method: "GET",
+      });
+      const response = await uploadRes.json();
+      const urls = response.map((item) => item.streamUrl);
+      setSrc(urls);
+    } catch {
+      console.error("Unable to get dashboard data");
+    }
   };
 
-  const handlePlayerReady = (player) => {
-    playerRef.current = player;
-
-    // You can handle player events here, for example:
-    player.on("waiting", () => {
-      videojs.log("player is waiting");
-    });
-
-    player.on("dispose", () => {
-      videojs.log("player will dispose");
-    });
-  };
+  if (!src.length) return <div>Loading videos…</div>;
   return (
     <>
-    {/* Modify the player to select 420, 720 and 1080p */}
-      <VideoPlayer options={videoJsOptions} onReady={handlePlayerReady} />
+      <Upload />
+      {src &&
+        src.map((url) => (
+          <div key={url} style={{ width: "25rem" }}>
+            <VideoPlayerContainer src={url} />
+          </div>
+        ))}
     </>
   );
 }
