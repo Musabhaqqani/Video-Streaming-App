@@ -73,7 +73,7 @@ jobs:
           # 2. Delete the remote file from Backblaze B2
           VIDEO_ID="${{ github.event.client_payload.videoId }}"
           FILENAME="${{ github.event.client_payload.filename }}"
-          b2 file delete "b2://$RAW_BUCKET/$VIDEO_ID-$FILENAME"
+          b2 rm "b2://$RAW_BUCKET/$VIDEO_ID-$FILENAME"
           echo "Cleanup complete."
 
       - name: Notify Backend
