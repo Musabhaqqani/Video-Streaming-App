@@ -32,6 +32,15 @@ export const VideoPlayer = (props) => {
     }
   }, [options, videoRef]);
 
+  // React.useEffect(() => {
+  //   const player = playerRef.current;
+  //   if (player && options.sources && options.sources.length > 0) {
+  //     player.ready(() => {
+  //       player.src(options.sources); // Update sources without reinitializing
+  //       console.log("Updated player sources:", options.sources);
+  //     });
+  //   }
+  // }, [props.src]);
   // Dispose the Video.js player when the functional component unmounts
   React.useEffect(() => {
     const player = playerRef.current;

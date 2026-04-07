@@ -61,6 +61,21 @@ jobs:
           # Note: We use './output' to be explicit about the local source
           b2 sync ./output "b2://$OUTPUT_BUCKET/videos/${{ github.event.client_payload.videoId }}/"
           
+      - name: Cleanup Raw Files
+        env:
+          B2_APPLICATION_KEY_ID: ${{ secrets.APPLICATION_KEY_ID }}
+          B2_APPLICATION_KEY: ${{ secrets.APPLICATION_KEY }}
+          RAW_BUCKET: ${{ vars.B2_PRIVATE_RAW_BUCKET }}
+        run: |
+          # 1. Authorize
+          b2 account authorize $B2_APPLICATION_KEY_ID $B2_APPLICATION_KEY
+          
+          # 2. Delete the remote file from Backblaze B2
+          VIDEO_ID="${{ github.event.client_payload.videoId }}"
+          FILENAME="${{ github.event.client_payload.filename }}"
+          b2 file delete "b2://$RAW_BUCKET/$VIDEO_ID-$FILENAME"
+          echo "Cleanup complete."
+
       - name: Notify Backend
         run: |
           curl -X POST "${{ vars.NGROK_URL }}/api/v1/updateVideoStatus?videoId=${{ github.event.client_payload.videoId }}&status=ready"

@@ -95,11 +95,33 @@ authorizeRoute.get("/getStreamUrl/:videoId", async (req, res) => {
     const authReponse = await b2.getDownloadAuthorization({
       bucketId: process.env.BUCKET_ID,
       fileNamePrefix: `videos/${videoId}/`,
-      validDurationInSeconds: 3600
+      validDurationInSeconds: 3600,
     });
     const token = authReponse.data.authorizationToken;
     const masterUrl = `https://f005.backblazeb2.com/file/${process.env.BUCKET_NAME}/videos/${videoId}/master.m3u8?Authorization=${token}`;
     res.json({ streamUrl: masterUrl });
+  } catch {
+    res.status(500).json({ error: "Could not generate stream URL" });
+  }
+});
+
+authorizeRoute.get("/getDashboardData", async (req, res) => {
+  try {
+    const videos = await client`
+          select id from videos where status = 'ready' order by created_at desc
+        `;
+    await b2.authorize();
+    const authReponse = await b2.getDownloadAuthorization({
+      bucketId: process.env.BUCKET_ID,
+      fileNamePrefix: `videos/`,
+      validDurationInSeconds: 3600,
+    });
+    const token = authReponse.data.authorizationToken;
+    const videoUrls = videos.map((vid) => ({
+      ...vid,
+      streamUrl: `https://f005.backblazeb2.com/file/${process.env.BUCKET_NAME}/videos/${vid.id}/master.m3u8?Authorization=${token}`,
+    }));
+    res.json(videoUrls);
   } catch {
     res.status(500).json({ error: "Could not generate stream URL" });
   }
@@ -121,6 +143,5 @@ authorizeRoute.get("/video-status/:id", async (req, res) => {
 });
 
 export default authorizeRoute;
-
 
 // b2 bucket update vod-application allPrivate --cors-rules "$(cat corsRules.json)"
