@@ -1,0 +1,81 @@
+name: Video Transcoder
+on:
+  repository_dispatch:
+    types: [start_transcode]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Install FFmpeg & B2 CLI
+        run: |
+          sudo apt-get install -y ffmpeg
+          pip install --upgrade b2
+
+      - name: Download and Transcode
+        env:
+          B2_APPLICATION_KEY_ID: ${{ secrets.APPLICATION_KEY_ID }}
+          B2_APPLICATION_KEY: ${{ secrets.APPLICATION_KEY }}
+          RAW_BUCKET: ${{ vars.B2_PRIVATE_RAW_BUCKET }}
+        run: |
+          # 1. Authorize
+          b2 account authorize $APPLICATION_KEY_ID $APPLICATION_KEY
+          
+          # 2. Setup folders
+          mkdir -p output/v0 output/v1 output/v2
+          
+          # 3. Variables from payload
+          VIDEO_ID="${{ github.event.client_payload.videoId }}"
+          FILENAME="${{ github.event.client_payload.filename }}"
+          
+          # 4. Download (Using modernized file download command)
+          b2 file download "b2://$RAW_BUCKET/$VIDEO_ID-$FILENAME" input.mp4
+          
+          # 5. Transcode
+          ffmpeg -i input.mp4 \
+          -map 0:v -map 0:a -s:v:0 1920x1080 -b:v:0 5000k \
+          -map 0:v -map 0:a -s:v:1 1280x720  -b:v:1 2800k \
+          -map 0:v -map 0:a -s:v:2 640x360   -b:v:2 800k \
+          -var_stream_map "v:0,a:0 v:1,a:1 v:2,a:2" \
+          -master_pl_name master.m3u8 \
+          -f hls -hls_time 10 -hls_list_size 0 \
+          -hls_segment_filename "output/v%v/file%03d.ts" output/v%v/index.m3u8
+
+      - name: Upload to Private Output Bucket
+        env:
+          B2_APPLICATION_KEY_ID: ${{ secrets.APPLICATION_KEY_ID }}
+          B2_APPLICATION_KEY: ${{ secrets.APPLICATION_KEY }}
+          OUTPUT_BUCKET: ${{ vars.B2_PRIVATE_OUTPUT_BUCKET }}
+        run: |
+          # 1. Re-authorize for this step
+          b2 account authorize $B2_APPLICATION_KEY_ID $B2_APPLICATION_KEY
+          
+          # 2. Debug: List the files created by FFmpeg to ensure they exist
+          echo "Checking generated files..."
+          ls -R output/
+          
+          # 3. Perform the Sync
+          # Note: We use './output' to be explicit about the local source
+          b2 sync ./output "b2://$OUTPUT_BUCKET/videos/${{ github.event.client_payload.videoId }}/"
+          
+      - name: Cleanup Raw Files
+        env:
+          B2_APPLICATION_KEY_ID: ${{ secrets.APPLICATION_KEY_ID }}
+          B2_APPLICATION_KEY: ${{ secrets.APPLICATION_KEY }}
+          RAW_BUCKET: ${{ vars.B2_PRIVATE_RAW_BUCKET }}
+        run: |
+          # 1. Authorize
+          b2 account authorize $B2_APPLICATION_KEY_ID $B2_APPLICATION_KEY
+          
+          # 2. Delete the remote file from Backblaze B2
+          VIDEO_ID="${{ github.event.client_payload.videoId }}"
+          FILENAME="${{ github.event.client_payload.filename }}"
+          b2 file delete "b2://$RAW_BUCKET/$VIDEO_ID-$FILENAME"
+          echo "Cleanup complete."
+
+      - name: Notify Backend
+        run: |
+          curl -X POST "${{ vars.NGROK_URL }}/api/v1/updateVideoStatus?videoId=${{ github.event.client_payload.videoId }}&status=ready"

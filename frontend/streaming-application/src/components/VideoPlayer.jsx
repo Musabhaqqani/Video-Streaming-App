@@ -2,6 +2,9 @@ import React from "react";
 import videojs from "video.js";
 import "video.js/dist/video-js.css";
 
+import "videojs-contrib-quality-levels";
+import "videojs-http-source-selector";
+
 export const VideoPlayer = (props) => {
   const videoRef = React.useRef(null);
   const playerRef = React.useRef(null);
@@ -21,13 +24,11 @@ export const VideoPlayer = (props) => {
         onReady && onReady(player);
       }));
 
-      // You could update an existing player in the `else` block here
-      // on prop change, for example:
-    } else {
-      const player = playerRef.current;
-
-      player.autoplay(options.autoplay);
-      player.src(options.sources);
+      player.ready(() => {
+        if (typeof player.httpSourceSelector === "function") {
+          player.httpSourceSelector({ default: "auto" });
+        }
+      });
     }
   }, [options, videoRef]);
 
