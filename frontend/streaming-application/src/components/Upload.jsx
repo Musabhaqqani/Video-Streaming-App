@@ -42,6 +42,7 @@ const Upload = () => {
         id="video-picker"
         accept="video/mp4,video/x-m4v,video/*"
         onChange={handleVideoUpload}
+        className="text-white"
       />
     </div>
   );
