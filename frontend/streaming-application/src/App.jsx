@@ -21,7 +21,7 @@ function App() {
     }
   };
 
-  if (!src.length) return <div>Loading videos…</div>;
+  if (!src.length && src.length != 0) return <div>Loading videos…</div>;
   return (
     <>
       <Upload />
