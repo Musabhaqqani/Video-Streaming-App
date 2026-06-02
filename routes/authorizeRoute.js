@@ -3,6 +3,7 @@ import express from "express";
 import dotenv from "dotenv";
 import { neon } from "@neondatabase/serverless";
 import axios from "axios";
+import { transcodingQueue } from "../transcodingQueue.js";
 
 dotenv.config();
 const client = neon(process.env.DATABASE_URL);
@@ -52,41 +53,20 @@ authorizeRoute.post("/updateVideoStatus", async (req, res) => {
         where id=${req.query.videoId}
         RETURNING id, original_file_name`;
     console.log(`Video ${req.query.videoId} is now ${req.query.status}`);
+    if(req.query.status == 'processing'){
+      await transcodingQueue.add('github-dispatch-action', {
+        videoId: response[0].id,
+        filename: response[0].original_file_name,
+      })
+    }
+    console.log("Request added to queue");
     res.status(200).json({ success: "Status updated" });
-    triggerTranscoding(response[0].id, response[0].original_file_name);
+    // triggerTranscoding(response[0].id, response[0].original_file_name);
   } catch (err) {
     console.log(err);
     res.status(500).json({ error: "Failed to change status" });
   }
 });
-
-const triggerTranscoding = async (videoId, filename) => {
-  const owner = "Musabhaqqani";
-  const repo = "Video-Streaming-App";
-  const token = process.env.GITHUB_TOKEN;
-  try {
-    await axios.post(
-      `https://api.github.com/repos/${owner}/${repo}/dispatches`,
-      {
-        event_type: "start_transcode", // Matches the 'types' in your YAML
-        client_payload: {
-          videoId: videoId,
-          filename: filename,
-          bucketId: process.env.BUCKET_ID,
-        },
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          Accept: "application/vnd.github.v3+json",
-        },
-      },
-    );
-    console.log("GitHub Action Triggered!");
-  } catch (err) {
-    console.error("Webhook Failed:", err.response?.data || err.message);
-  }
-};
 
 authorizeRoute.get("/getStreamUrl/:videoId", async (req, res) => {
   const { videoId } = req.params;
