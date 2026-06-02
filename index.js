@@ -1,13 +1,22 @@
 import express from 'express'
+import dotenv from "dotenv";
+dotenv.config();
+
 import cors from 'cors'
 import path from 'path'
 import { fileURLToPath } from 'url';
 import uploadRoute from './routes/uploadRoute.js'
 import authorizeRoute from './routes/authorizeRoute.js';
+import { recoverOrphanedJobs } from './recoverOrphanedJobs.js';
+import { neon } from '@neondatabase/serverless';
+
+import transcodeWorker from './worker.js';
 
 const app = express();
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+const client = neon(process.env.DATABASE_URL)
 
 app.use(cors({origin: ['http://localhost:3000', 'http://localhost:5173'], credentials: true}))
 app.use(express.json())
@@ -16,4 +25,7 @@ app.use(express.urlencoded({extended: true}))
 
 app.use('/api/v1', uploadRoute);
 app.use('/api/v1', authorizeRoute);
-app.listen(8000, () => console.log('Server is listening at 8000'))
+app.listen(8000, async() => {
+    console.log('Server is listening at 8000');
+    await recoverOrphanedJobs(client);
+})

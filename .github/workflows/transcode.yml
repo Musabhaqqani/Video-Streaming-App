@@ -12,6 +12,7 @@ jobs:
 
       - name: Install FFmpeg & B2 CLI
         run: |
+          sudo apt-get update --fix-missing
           sudo apt-get install -y ffmpeg
           pip install --upgrade b2
 
