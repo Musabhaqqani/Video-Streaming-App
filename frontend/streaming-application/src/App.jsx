@@ -4,26 +4,29 @@ import VideoPlayerContainer from "./components/VideoPlayerContainer";
 
 function App() {
   const [src, setSrc] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
   useEffect(() => {
     getUploadedVideos();
   }, []);
 
   const getUploadedVideos = async () => {
     try {
+      setIsLoading(true);
       const uploadRes = await fetch("api/v1/getDashboardData", {
         method: "GET",
       });
       const response = await uploadRes.json();
       const urls = response.map((item) => item.streamUrl);
       setSrc(urls);
+      setIsLoading(false);
     } catch {
       console.error("Unable to get dashboard data");
     }
   };
 
-  if (!src.length && src.length != 0) return <div>Loading videos…</div>;
+  if (isLoading) return <div className="text-white">Loading videos…</div>;
   return (
-    <>
+    <div>
       <Upload />
       {src &&
         src.map((url) => (
@@ -31,7 +34,7 @@ function App() {
             <VideoPlayerContainer src={url} />
           </div>
         ))}
-    </>
+    </div>
   );
 }
 
